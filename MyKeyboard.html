@@ -1,0 +1,373 @@
+<!-- 
+	Andrew Grace
+	CSC 9010 Web Contest #1 
+	2014-10-19
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Andrew Grace Keyboard</title>
+	<style>
+		div#wrapper {
+			margin-left: auto;
+			margin-right: auto;
+			text-align: center;
+			width: 800px;
+		}
+
+		div textarea#myText {
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			width: 100%;
+			height: 40%;
+			font-size: 20pt;
+			font-family: Arial;
+		}
+
+		#keyboardWrapper {
+			display: block;
+			margin-left: auto;	
+			margin-right: auto;
+			
+			margin-top: 2%;
+			background: #ebebeb;
+			display: block;			
+			width: 100%;
+			border: 1px solid #5b5b5b;
+			font-family: Arial;
+			overflow: hidden;
+			min-width: 550px;
+		}
+		
+		/* The individual keyboard rows */
+		span.keyboardRow {
+			margin-top: 0px;
+			background: #ebebeb;
+			display: block;
+		}
+
+		/* The individual keyboard keys */
+		a.keyboardKey {
+			display: inline-block;
+			background: #53777a;
+			color:#fff;
+			text-decoration: none;
+			/*font-size: 18pt;*/
+			font-size: 2vw;
+			text-align: center;
+			padding-top: 5px;
+			padding-bottom: 5px;
+			margin-top: 2px;
+			margin-bottom: 2px;
+		}
+
+		#myName {
+			text-align: right;
+		}
+
+	</style>
+</head>
+<body>
+	<div id="wrapper">
+	
+		<h1>Keyboard Simulator</h1>
+		<textarea name="myText" id="myText"></textarea>
+		<div id="keyboardWrapper"></div>			
+		<div id="myName">by Andrew Grace</div>
+	</div>
+
+</body>
+<script>
+	//Create the on-screen keyboard
+	(function mainMethod() {	
+
+		var myText = document.getElementById("myText");
+		var keyboardDiv = document.getElementById("keyboardWrapper");
+		var shiftState = false;
+		var keyClickedColor = "green";
+		var keyUnclickedColor = "#53777a";
+
+		//The calls to run the script
+		var kbRows = createKeyboardArray();		
+		createKeysAndAddToDOM();
+		createKeyRows();
+		setKeySpacing();
+		window.onkeydown = function () {new Audio("keyType.wav").play();}
+
+		//*********************************************
+		//helper functions
+		//*********************************************
+		function createKeyboardArray() {
+			var temp = new Array();
+			temp.push("1,2,3,4,5,6,7,8,9,0,BACKSPACE".split(","));
+			temp.push("Q,W,E,R,T,Y,U,I,O,P".split(","));
+			temp.push("A,S,D,F,G,H,J,K,L".split(","));
+			temp.push("SHIFT,Z,X,C,V,B,N,M".split(","));		
+			temp.push(["SPACE"]);
+
+			return temp;
+		}
+
+		function createKeysAndAddToDOM() {
+			//create the elements for the keys
+			var htmlString = "";
+			var thisRow;
+
+			for (var i = 0; i < kbRows.length; i++)
+			{
+				thisRow = kbRows[i];
+				htmlString += "<span class='keyboardRow' id='keyboardRow"+ i +"'>"
+				for (var j = 0; j < thisRow.length; j++)
+				{
+					htmlString += "<a href='#' class='keyboardKey' id='key"+ thisRow[j] +"'" +" name='"+ thisRow[j] +"'>";
+					switch (thisRow[j])
+					{
+						case "SHIFT":
+							htmlString += "\u21E7";		//unicode char for shift symbol
+							break;
+						case "BACKSPACE":
+							htmlString += "\u232B";		//unicode char for backspace symbol
+							break;
+						case "SPACE":
+							htmlString += thisRow[j];
+							break;
+						default:
+							htmlString += thisRow[j].toLowerCase();		//default keyboard state is lower case
+					}
+					
+					htmlString += "</a>";
+				}
+				htmlString += "</span>";
+				//htmlString += "<br>";
+				htmlString += "\n";
+			} //end for 
+
+			//append HTML to the DOM
+			document.getElementById("keyboardWrapper").innerHTML = htmlString;
+		}	//end function
+
+		function createKeyRows () {
+			for (var i = 0; i < kbRows.length; i++)
+			{
+				var thisKeyRow = document.getElementById("keyboardRow"+i);
+				var thisKey;
+				var keyWidth = 8;	//in percent
+				// var verticalPadding = "5px";
+				// var verticalMargin = "1px";
+				
+				thisKeyRow.totalKeyWidth = 0;	//adding property to track total width of keyboard keys
+				for (var j = 0; j < thisKeyRow.children.length; j++)
+				{
+					thisKey = thisKeyRow.children[j];
+					switch (thisKey.name) 	
+					{
+						case "SHIFT":
+							thisKey.style.width = (keyWidth * 3) +"%";
+						break;
+						
+						case "SPACE":
+							thisKey.style.width = "50%";
+						break;
+
+						case "BACKSPACE":
+							thisKey.style.width = (keyWidth * 1.5) +"%";						
+						break;
+						
+						default:						
+							thisKey.style.width = keyWidth+"%";
+					}
+					thisKeyRow.totalKeyWidth += thisKey.offsetWidth;	//summing the pixel width of keys
+
+					//thisKey.addEventListener("click", clickHandler(evt));
+					thisKey.onclick = clickHandler;
+
+					if (thisKey.name !== "SHIFT")	{				
+						thisKey.onmousedown = mouseDownHandler;
+						thisKey.onmouseup = mouseUpHandler;
+					}	
+					
+				}	//end for
+
+			}
+		}	//end function
+
+		function clickHandler(evt) {		
+			evt.preventDefault();		//don't want a refresh since the button is an anchor
+			var keyName = evt.target.name;
+			var willChangeKeyboardCase = (shiftState === true);
+			var keyPress = new Audio("keyType.wav");
+
+			switch(keyName)
+			{
+				case "SHIFT":
+					//myText.value += evt.target.name;
+					toggleShiftState();
+					break;
+
+				case "BACKSPACE":
+					myText.value = myText.value.substring(0, myText.value.length-1);
+					keyPress.play();
+					break;
+
+				case "SPACE":
+					myText.value += " ";
+					keyPress.play();
+					break;
+
+				default:
+					if (shiftState) {
+						myText.value += evt.target.name;		
+					} else {
+						myText.value += evt.target.name.toLowerCase();		
+					}
+					keyPress.play();
+			}
+			
+			//if shift was pressed, then change it back after the next key clicked
+			if (willChangeKeyboardCase)
+			{
+				toggleShiftState();
+				changeKeyboardCase(shiftState);
+			}
+
+			myText.focus();			
+		}
+
+		function mouseDownHandler(evt) {
+			//evt.preventDefault();
+			evt.target.style.background = "green";
+			
+			
+		}
+
+		function mouseUpHandler(evt) {
+			//evt.preventDefault();
+			evt.target.style.background = keyUnclickedColor;				
+		}
+
+
+		function toggleShiftState()
+		{			
+			shiftState = !shiftState;	//toggle values	
+			var shiftKey = document.getElementById("keySHIFT");
+
+			changeKeyboardCase(shiftState);			
+
+			if (shiftState) {
+				shiftKey.style.background = keyClickedColor;
+			} else {
+				shiftKey.style.background = keyUnclickedColor;
+			}
+		}
+
+		function changeKeyboardCase(shiftState)
+		{
+			for (var i = 0; i < keyboardDiv.children.length; i++)
+			{	
+				var thisKeyRow = keyboardDiv.children[i];
+				for (var j = 0; j < thisKeyRow.children.length; j++) 
+				{
+					var thisKey = thisKeyRow.children[j];
+					var keyName = thisKey.name;
+					var keepGoing = (keyName !== "SPACE") && (keyName !== "BACKSPACE") && (keyName !== "SHIFT")
+
+					if (keepGoing) {
+						if (shiftState) {
+							thisKey.innerText = thisKey.name.toUpperCase();
+						} else {
+							thisKey.innerText = thisKey.name.toLowerCase();
+						}	
+					}	//end if
+				}	// for j		
+			}	// for i
+		}
+
+		function setKeySpacing() {
+
+				//now space out the elements in the DOM
+			var thisKeyRow
+			var thisKey;
+			
+			for (var i = 0; i < keyboardDiv.children.length; i++)
+			{	
+				thisKeyRow = keyboardDiv.children[i];
+				
+				//setting left & right margins for this row
+				var divWidth = thisKeyRow.parentNode.offsetWidth;
+				
+				//Adjust the margins per row on the keyboard
+
+				var defaultLeftMargin = 2; 	//percent
+				var defaultRightMargin = 1.5; 	//percent
+				var extraLeftPadding = 0;
+				var extraRightPadding = 0;
+				switch (thisKeyRow.id)
+				{
+					// case "keyboardRow0":
+					// break;
+					
+					case "keyboardRow1":
+						thisKeyRow.style.marginLeft = (extraLeftPadding + defaultLeftMargin+1)+"%";
+						thisKeyRow.style.marginRight = (extraRightPadding + defaultRightMargin)+"%";
+					break;
+					
+					case "keyboardRow2":
+						thisKeyRow.style.marginLeft = (extraLeftPadding + defaultLeftMargin+2)+"%";
+						thisKeyRow.style.marginRight = (extraRightPadding + defaultRightMargin+1)+"%";
+					break;
+					
+					case "keyboardRow3":
+						thisKeyRow.style.marginLeft = (extraLeftPadding + defaultLeftMargin+3)+"%";
+						thisKeyRow.style.marginRight = (extraRightPadding + defaultRightMargin+2)+"%";
+					break;
+					
+					case "keyboardRow4":
+						 thisKeyRow.style.marginLeft = (extraLeftPadding+5)+"%";
+						 thisKeyRow.style.marginRight = (extraRightPadding + defaultRightMargin)+"%";
+					break;
+					
+					default:
+						thisKeyRow.style.marginLeft = (extraLeftPadding+defaultLeftMargin-1)+"%";
+						thisKeyRow.style.marginRight = (extraRightPadding+defaultRightMargin-1)+"%";
+
+				}	//end switch key row
+
+				// //calculate how much padding to apply per key
+				var spanLeftMargin = parseInt(getComputedStyle(thisKeyRow).getPropertyValue("margin-left"));
+				var spanRightMargin = parseInt(getComputedStyle(thisKeyRow).getPropertyValue("margin-right"));
+				var remainingSpace = divWidth - (spanLeftMargin + spanRightMargin);	//how much horiz space left in div
+
+				var keyPadding = (remainingSpace - thisKeyRow.totalKeyWidth)/(thisKeyRow.children.length - 1);
+				keyPadding = parseInt(keyPadding,10);
+
+
+				for (var j = 0; j < thisKeyRow.children.length; j++)
+				{
+					if (j !== 0)	//skip the first one
+					{
+						thisKey = thisKeyRow.children[j];
+						thisKey.style.marginLeft = keyPadding + "px";							
+					}
+					
+				}			
+				
+			} //end for loop i
+
+			myText.focus();		//keep the keyboard cursor blinking
+
+		} //end function
+
+		
+		//*********************************************
+		//end helper functions
+		//*********************************************
+		
+
+
+	})();	//end mainMethod function
+
+</script>
+</html>
